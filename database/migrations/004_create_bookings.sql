@@ -1,0 +1,58 @@
+-- Migration 004: Bookings and booking items
+USE mobility_chef;
+
+CREATE TABLE IF NOT EXISTS bookings (
+  id                   BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  uuid                 VARCHAR(36) NOT NULL UNIQUE DEFAULT (UUID()),
+  customer_id          BIGINT UNSIGNED NOT NULL,
+  chef_id              BIGINT UNSIGNED NOT NULL,
+  address_id           BIGINT UNSIGNED NOT NULL,
+  booking_date         DATE NOT NULL,
+  start_time           TIME NOT NULL,
+  end_time             TIME,
+  status               ENUM('pending','confirmed','chef_en_route','in_progress','completed','cancelled','disputed') NOT NULL DEFAULT 'pending',
+  booking_type         ENUM('standard','emergency','event') NOT NULL DEFAULT 'standard',
+  guests_count         INT UNSIGNED DEFAULT 2,
+  special_instructions TEXT,
+  food_cost            DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  chef_fee             DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  transport_fee        DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  equipment_fee        DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  extra_service_fee    DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  platform_commission  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  tax                  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  total_amount         DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  currency             VARCHAR(3) NOT NULL DEFAULT 'KES',
+  chef_accepted_at     DATETIME,
+  chef_departed_at     DATETIME,
+  chef_arrived_at      DATETIME,
+  service_started_at   DATETIME,
+  service_completed_at DATETIME,
+  customer_confirmed_at DATETIME,
+  cancelled_at         DATETIME,
+  cancelled_by         BIGINT UNSIGNED,
+  cancellation_reason  TEXT,
+  loyalty_points_earned INT UNSIGNED DEFAULT 0,
+  loyalty_points_used   INT UNSIGNED DEFAULT 0,
+  created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES users(id),
+  FOREIGN KEY (chef_id) REFERENCES chef_profiles(id),
+  FOREIGN KEY (address_id) REFERENCES addresses(id),
+  INDEX idx_customer (customer_id),
+  INDEX idx_chef     (chef_id),
+  INDEX idx_status   (status),
+  INDEX idx_date     (booking_date)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS booking_items (
+  id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  booking_id   BIGINT UNSIGNED NOT NULL,
+  menu_item_id BIGINT UNSIGNED NOT NULL,
+  quantity     INT UNSIGNED NOT NULL DEFAULT 1,
+  unit_price   DECIMAL(10,2) NOT NULL,
+  subtotal     DECIMAL(10,2) NOT NULL,
+  created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+  FOREIGN KEY (menu_item_id) REFERENCES menu_items(id)
+) ENGINE=InnoDB;
